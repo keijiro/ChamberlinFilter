@@ -3,6 +3,15 @@ using System.Collections;
 
 public class ChamberlinFilter : MonoBehaviour
 {
+	public enum FilterType
+	{
+		LowPassFilter,
+		BandPassFilter,
+		HighPassFilter
+	}
+
+	public FilterType filterType = FilterType.BandPassFilter;
+
     [Range(0.01f, 0.999f)]
     public float cutoff = 0.5f;
     
@@ -40,7 +49,15 @@ public class ChamberlinFilter : MonoBehaviour
             hpf = data[i] - lpf - bpf * d;
             bpf = hpf * f + bpf;
 
-            data[i] = data[i+1] = Mathf.Clamp(bpf, -1.0f, 1.0f);
+			float o;
+			if (filterType == FilterType.LowPassFilter)
+				o = lpf;
+			else if (filterType == FilterType.BandPassFilter)
+				o = bpf;
+			else
+				o = hpf;
+
+            data[i] = data[i+1] = Mathf.Clamp(o, -1.0f, 1.0f);
         }
     }
 }
