@@ -251,5 +251,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0ec4fc3ed02a049a683c6b0c5be78a52, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cutoffKHz: 10
-  q: .5
+  cutoff: .5
+  q: 1
