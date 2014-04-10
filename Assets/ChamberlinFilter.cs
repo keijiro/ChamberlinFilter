@@ -21,18 +21,12 @@ public class ChamberlinFilter : MonoBehaviour
     float lpf;
     float bpf;
     float hpf;
-    float sampleRate;
+    public float sampleRate;
 
     void Start()
     {
         sampleRate = AudioSettings.outputSampleRate;
-        Debug.Log("Sample rate: " + sampleRate);
     }
-
-	void Update()
-	{
-		Debug.Log ("Cutoff: " + (Mathf.Pow (2.0f, cutoff * 10 - 10) * 0.25f * sampleRate));
-	}
 
     void OnAudioFilterRead(float[] data, int channels)
     {
