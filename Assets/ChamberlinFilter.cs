@@ -12,46 +12,62 @@ public class ChamberlinFilter : MonoBehaviour
 
 	public FilterType filterType = FilterType.BandPassFilter;
 
-    [Range(0.01f, 0.999f)]
+    [Range(0.0f, 1.0f)]
     public float cutoff = 0.5f;
     
 	[Range(0.5f, 2.0f)]
     public float q = 1.0f;
 
-    float lpf;
-    float bpf;
-    float hpf;
-    public float sampleRate;
+	float sampleRate;
+	float filterF;
+	float filterD;
+	float filterL;
+    float filterB;
+    float filterH;
+	bool stability;
 
-    void Start()
+	public float CutoffFrequency {
+		get { return Mathf.Pow(2, cutoff * 10 - 10) * 0.25f * sampleRate; }
+	}
+
+	public bool Stability {
+		get { return stability; }
+	}
+
+    void Awake()
     {
         sampleRate = AudioSettings.outputSampleRate;
+		Update();
+		audio.Play();
     }
+
+	void Update()
+	{
+		filterF = Mathf.Sin(Mathf.PI * Mathf.Pow(2, cutoff * 10 - 10) * 0.25f) * 2;
+		filterD = 1 / q;
+		stability = (filterF * filterF + filterF * filterD * 2 < 4);
+	}
 
     void OnAudioFilterRead(float[] data, int channels)
     {
-        if (sampleRate == 0) return;
-
-        float f = 2.0f * Mathf.Sin(Mathf.PI * Mathf.Pow (2.0f, cutoff * 10 - 10) * 0.25f);
-		float d = 1.0f / q;
-
-		if (f * f + f * d * 2 >= 4.0f) return;
+        if (!stability) return;
 			
 		for (var i = 0; i < data.Length; i += channels)
         {
-            lpf += bpf * f;
-            hpf = data[i] - lpf - bpf * d;
-            bpf = hpf * f + bpf;
+            filterL += filterB * filterF;
+            filterH = data[i] - filterL - filterB * filterD;
+            filterB = filterH * filterF + filterB;
 
 			float o;
 			if (filterType == FilterType.LowPassFilter)
-				o = lpf;
+				o = filterL;
 			else if (filterType == FilterType.BandPassFilter)
-				o = bpf;
+				o = filterB;
 			else
-				o = hpf;
+				o = filterH;
 
-            data[i] = data[i+1] = Mathf.Clamp(o, -1.0f, 1.0f);
+			for (var c = 0; c < channels; c++)
+	            data[i + c] = o;
         }
     }
 }
