@@ -1,5 +1,5 @@
-ChamberlinFilter (Unity)
-------------------------
+Chamberlin State Variable Filter (Unity)
+----------------------------------------
 
 An implementation of the digital state variable filter designed by H. Chamberlin.
 
