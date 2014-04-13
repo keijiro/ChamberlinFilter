@@ -1,73 +1,58 @@
-﻿using UnityEngine;
+﻿// Corrected Chamberlin Bandpass Filter
+// http://courses.cs.washington.edu/courses/cse490s/11au/Readings/Digital_Sound_Generation_2.pdf
+
+using UnityEngine;
 using System.Collections;
 
 public class ChamberlinFilter : MonoBehaviour
 {
-	public enum FilterType
-	{
-		LowPassFilter,
-		BandPassFilter,
-		HighPassFilter
-	}
+	[Range(0.0f, 1.0f)]
+	public float cutoff = 0.5f;
+	
+	[Range(1.0f, 10.0f)]
+	public float q = 1.0f;
 
-	public FilterType filterType = FilterType.BandPassFilter;
+	// DSP variables
+	float vF;
+	float vD;
+	float vZ1;
+	float vZ2;
+	float vZ3;
 
-    [Range(0.0f, 1.0f)]
-    public float cutoff = 0.5f;
-    
-	[Range(0.5f, 2.0f)]
-    public float q = 1.0f;
-
-	float sampleRate;
-	float filterF;
-	float filterD;
-	float filterL;
-    float filterB;
-    float filterH;
-	bool stability;
-
+	// Cutoff frequency in Hz
 	public float CutoffFrequency {
-		get { return Mathf.Pow(2, cutoff * 10 - 10) * 0.25f * sampleRate; }
+		get { return Mathf.Pow(2, 10 * cutoff - 10) * 15000; }
 	}
 
-	public bool Stability {
-		get { return stability; }
-	}
-
-    void Awake()
-    {
-        sampleRate = AudioSettings.outputSampleRate;
+	void Awake()
+	{
 		Update();
 		audio.Play();
-    }
-
+	}
+	
 	void Update()
 	{
-		filterF = Mathf.Sin(Mathf.PI * Mathf.Pow(2, cutoff * 10 - 10) * 0.25f) * 2;
-		filterD = 1 / q;
-		stability = (filterF * filterF + filterF * filterD * 2 < 4);
+		var f = 2 / 1.85f * Mathf.Sin(Mathf.PI * CutoffFrequency / AudioSettings.outputSampleRate);
+		vD = 1 / q;
+		vF = (1.85f - 0.75f * vD * f) * f;
 	}
 
     void OnAudioFilterRead(float[] data, int channels)
     {
-        if (!stability) return;
-			
 		for (var i = 0; i < data.Length; i += channels)
-        {
-            filterL += filterB * filterF;
-            filterH = data[i] - filterL - filterB * filterD;
-            filterB = filterH * filterF + filterB;
-
-			float o;
-			if (filterType == FilterType.LowPassFilter)
-				o = filterL;
-			else if (filterType == FilterType.BandPassFilter)
-				o = filterB;
-			else
-				o = filterH;
-
+		{
+			var si = data[i];
+			
+			var _vZ1 = 0.5f * si;
+			var _vZ3 = vZ2 * vF + vZ3;
+			var _vZ2 = (_vZ1 + vZ1 - _vZ3 - vZ2 * vD) * vF + vZ2;
+			
 			for (var c = 0; c < channels; c++)
-	            data[i + c] = o;
-        }
-    }
+				data[i + c] = _vZ2;
+			
+			vZ1 = _vZ1;
+			vZ2 = _vZ2;
+			vZ3 = _vZ3;
+		}
+	}
 }
